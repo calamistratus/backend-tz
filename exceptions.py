@@ -1,6 +1,7 @@
 from fastapi.responses import JSONResponse
 from fastapi.requests import Request
 
+
 class RedisPostgresException(Exception):
     """There was an error contacting postgres/redis"""
     pass
