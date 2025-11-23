@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Service — Data Viewer</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<style>
+  :root{--bg:#f4f6f8;--card:#fff;--muted:#666;--accent:#007bff}
+  body{font-family:Inter,system-ui,Arial,sans-serif;background:var(--bg);margin:0;padding:28px;box-sizing:border-box}
+  .wrap{max-width:1100px;margin:0 auto}
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+  h1{font-size:20px;margin:0;color:#222}
+  .controls{display:flex;gap:10px;align-items:center}
+  select,input{padding:8px 10px;border:1px solid #ddd;border-radius:6px;background:white}
+  button{padding:9px 12px;border-radius:8px;border:0;background:var(--accent);color:#fff;cursor:pointer}
+  button.secondary{background:#6c757d}
+  .card{background:var(--card);padding:18px;border-radius:12px;box-shadow:0 6px 18px rgba(15,20,30,0.06);margin-bottom:16px}
+  .note{color:var(--muted);font-size:13px;margin-top:6px}
+  #resultCount{font-weight:600;color:#333}
+  table{width:100%;border-collapse:collapse;margin-top:12px}
+  th,td{padding:10px 8px;border-bottom:1px solid #eee;text-align:left;font-size:14px}
+  th{background:#fbfbfd;font-weight:600}
+  pre.json{white-space:pre-wrap;background:#0f1724;color:#e6eef8;padding:12px;border-radius:8px;overflow:auto;font-size:13px}
+  .error{color:#b00020;background:#fff0f0;padding:10px;border-radius:8px;margin-top:12px}
+  .small{font-size:13px;color:#666}
+  .flex{display:flex;gap:10px;align-items:center}
+  @media (max-width:720px){header{flex-direction:column;align-items:flex-start;gap:10px}.controls{width:100%;flex-wrap:wrap}}
+  .home-link {position: fixed; top: 15px; left: 20px; font-size: 18px; font-weight: bold; color: #333; text-decoration: none;}
+  .home-link:hover {text-decoration: underline}
+</style>
+</head>
+<body>
+<a href="/" class="home-link">← Home</a>
+  <div class="wrap">
+    <header>
+      <h1>Service — Data Viewer</h1>
+      <div class="controls">
+        <label class="small" for="repoSelect">Repository</label>
+        <select id="repoSelect" aria-label="Repository">
+          <option value="very_unimportant_data">Very Unimportant Data</option>
+          <option value="unimportant_data">Unimportant Data</option>
+          <option value="important_data">Important Data</option>
+          <option value="accounts">Accounts</option>
+        </select>
+
+        <label class="small" for="limit">Limit</label>
+        <input id="limit" type="number" min="1" step="1" placeholder="rows" style="width:88px" />
+
+        <button id="fetchBtn">Fetch</button>
+        <button id="clearBtn" class="secondary">Clear</button>
+      </div>
+    </header>
+
+    <div class="card">
+      <div class="flex" style="justify-content:space-between;align-items:center">
+        <div>
+          <div class="small">Selected repository:</div>
+          <div id="selectedRepo" style="font-weight:700">very_unimportant_data</div>
+        </div>
+        <div style="text-align:right">
+          <div class="small">Result count</div>
+          <div id="resultCount">—</div>
+        </div>
+      </div>
+
+      <div id="error" class="error" style="display:none"></div>
+
+      <div id="tableWrap"></div>
+      <pre id="rawJson" class="json" style="display:none"></pre>
+      <div id="emptyNote" class="note" style="display:none">No data returned.</div>
+    </div>
+  </div>
+
+<script>
+  const repoSelect = document.getElementById('repoSelect');
+  const fetchBtn = document.getElementById('fetchBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const selectedRepo = document.getElementById('selectedRepo');
+  const tableWrap = document.getElementById('tableWrap');
+  const rawJson = document.getElementById('rawJson');
+  const errorDiv = document.getElementById('error');
+  const resultCount = document.getElementById('resultCount');
+  const emptyNote = document.getElementById('emptyNote');
+  const limitInput = document.getElementById('limit');
+
+  repoSelect.addEventListener('change', () => {
+    selectedRepo.textContent = repoSelect.value;
+    clearResults();
+  });
+
+  fetchBtn.addEventListener('click', doFetch);
+  clearBtn.addEventListener('click', clearResults);
+
+  function clearResults(){
+    tableWrap.innerHTML = '';
+    rawJson.style.display = 'none';
+    rawJson.textContent = '';
+    errorDiv.style.display = 'none';
+    resultCount.textContent = '—';
+    emptyNote.style.display = 'none';
+  }
+
+  async function doFetch(){
+    clearResults();
+    errorDiv.style.display = 'none';
+    const repo = repoSelect.value;
+    let url = `/service/fetch_data/?repository_name=${encodeURIComponent(repo)}`;
+    const limit = parseInt(limitInput.value);
+    if (!Number.isNaN(limit) && limit > 0) url += `&limit=${limit}`;
+
+    let resp;
+    try {
+      resp = await fetch(url, { method: 'GET', credentials: 'same-origin' });
+    } catch (err) {
+      showError('Network error: ' + (err.message || err));
+      return;
+    }
+
+    if (!resp.ok) {
+      // Try parse JSON {detail: ...} then fallback to text
+      try {
+        const j = await resp.json();
+        showError(j.detail || JSON.stringify(j));
+      } catch {
+        const t = await resp.text();
+        showError(t || `HTTP ${resp.status}`);
+      }
+      return;
+    }
+
+    // parse JSON data
+    let data;
+    try {
+      data = await resp.json();
+    } catch (err) {
+      showError('Invalid JSON response');
+      return;
+    }
+
+    if (!Array.isArray(data)) {
+      // not an array — show raw
+      rawJson.style.display = 'block';
+      rawJson.textContent = JSON.stringify(data, null, 2);
+      resultCount.textContent = Object.keys(data || {}).length;
+      return;
+    }
+
+    if (data.length === 0) {
+      emptyNote.style.display = 'block';
+      resultCount.textContent = '0';
+      return;
+    }
+
+    // If array of primitives, show as JSON
+    if (typeof data[0] !== 'object') {
+      rawJson.style.display = 'block';
+      rawJson.textContent = JSON.stringify(data, null, 2);
+      resultCount.textContent = data.length;
+      return;
+    }
+
+    // Build table using keys from first object union keys across all rows
+    const headers = new Set();
+    data.forEach(row => Object.keys(row || {}).forEach(k => headers.add(k)));
+    const headerList = Array.from(headers);
+
+    const table = document.createElement('table');
+    const thead = document.createElement('thead');
+    const trHead = document.createElement('tr');
+    headerList.forEach(h => {
+      const th = document.createElement('th');
+      th.textContent = h;
+      trHead.appendChild(th);
+    });
+    thead.appendChild(trHead);
+    table.appendChild(thead);
+
+    const tbody = document.createElement('tbody');
+    data.forEach(row => {
+      const tr = document.createElement('tr');
+      headerList.forEach(h => {
+        const td = document.createElement('td');
+        const v = row[h];
+        td.textContent = v === null || v === undefined ? '' : String(v);
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    table.appendChild(tbody);
+
+    tableWrap.appendChild(table);
+    resultCount.textContent = String(data.length);
+  }
+
+  function showError(msg) {
+    errorDiv.style.display = 'block';
+    errorDiv.textContent = String(msg);
+    resultCount.textContent = '—';
+  }
+
+  // Auto-fetch on page load for the default repository
+  doFetch();
+</script>
+</body>
+</html>

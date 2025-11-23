@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Authentication</title>
+<style>
+    body { font-family: Arial, sans-serif; background: #f4f4f4; margin:0; padding:20px; }
+    .container { max-width: 500px; margin: auto; background: white; padding:20px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.2); margin-bottom:30px; }
+    h2 { text-align:center; color:#333; }
+    label { display:block; margin-top:10px; font-weight:bold; }
+    input[type="text"], input[type="password"], input[type="email"] { width:100%; padding:8px; margin-top:5px; box-sizing:border-box; }
+    button { margin-top:15px; padding:10px; width:100%; border:none; border-radius:5px; cursor:pointer; color:white; }
+    button.register { background-color:#007bff; }
+    button.login { background-color:#28a745; }
+    button.update { background-color:#ffc107; color:black; }
+    button.delete { background-color:#dc3545; }
+    button.logout { background-color:#6c757d; }
+    .error { color:red; font-size:0.9em; margin-top:5px; }
+    .home-link {position: fixed; top: 15px; left: 20px; font-size: 18px; font-weight: bold; color: #333; text-decoration: none;}
+    .home-link:hover {text-decoration: underline}
+</style>
+</head>
+<body>
+<a href="/" class="home-link">← Home</a>
+<!-- REGISTER -->
+<div class="container">
+    <h2>Register</h2>
+    <label>Username:</label><input type="text" id="regUsername">
+    <label>Name:</label><input type="text" id="regName">
+    <label>Surname:</label><input type="text" id="regSurname">
+    <label>Email:</label><input type="email" id="regEmail">
+    <label>Password:</label><input type="password" id="regPassword">
+    <label>Repeat Password:</label><input type="password" id="regRepeatPassword">
+    <div class="error" id="regError"></div>
+    <button class="register" onclick="performRegister()">Register</button>
+</div>
+
+<!-- LOGIN -->
+<div class="container">
+    <h2>Login</h2>
+    <label>Email:</label><input type="text" id="loginEmail">
+    <label>Password:</label><input type="password" id="loginPassword">
+    <div class="error" id="loginError"></div>
+    <button class="login" onclick="performLogin()">Login</button>
+</div>
+
+<!-- UPDATE -->
+<div class="container">
+    <h2>Update Account</h2>
+    <label>New Username:</label><input type="text" id="updUsername">
+    <label>New Name:</label><input type="text" id="updName">
+    <label>New Surname:</label><input type="text" id="updSurname">
+    <label>New Email:</label><input type="email" id="updEmail">
+    <label>Password:</label><input type="password" id="updPassword">
+    <label>Repeat password:</label><input type="password" id="updRepeatPassword">
+    <div class="error" id="updError"></div>
+    <button class="update" onclick="performUpdate()">Update</button>
+</div>
+
+<!-- DELETE -->
+<div class="container">
+    <h2>Delete Account</h2>
+    <label>Email:</label><input type="text" id="delEmail">
+    <label>Password:</label><input type="password" id="delPassword">
+    <div class="error" id="delError"></div>
+    <button class="delete" onclick="performDelete()">Delete</button>
+</div>
+
+<!-- LOGOUT -->
+<div class="container">
+    <h2>Logout</h2>
+    <button class="logout" onclick="performLogout()">Logout</button>
+</div>
+
+<script>
+async function handleResponse(response, errorDiv) {
+    if (response.ok) {
+        window.location.href = '/';
+    } else {
+        try {
+            const msgObj = await response.json();
+            errorDiv.textContent = msgObj.detail || JSON.stringify(msgObj);
+        } catch {
+            const msg = await response.text();
+            errorDiv.textContent = msg;
+        }
+    }
+}
+
+async function performRegister() {
+    const errorDiv = document.getElementById('regError');
+    const bodyData = {
+        username: document.getElementById('regUsername').value,
+        name: document.getElementById('regName').value,
+        surname: document.getElementById('regSurname').value,
+        email: document.getElementById('regEmail').value,
+        password: document.getElementById('regPassword').value
+    };
+    const repeat = document.getElementById('regRepeatPassword').value;
+    if (bodyData.password !== repeat) { errorDiv.textContent = "Passwords do not match!"; return; }
+    errorDiv.textContent = "";
+    const response = await fetch('/auth/register', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(bodyData) });
+    await handleResponse(response, errorDiv);
+}
+
+async function performLogin() {
+    const errorDiv = document.getElementById('loginError');
+    const bodyData = {
+        email: document.getElementById('loginEmail').value,
+        password: document.getElementById('loginPassword').value
+    };
+    errorDiv.textContent = "";
+    const response = await fetch('/auth/login', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(bodyData) });
+    await handleResponse(response, errorDiv);
+}
+
+async function performUpdate() {
+    const errorDiv = document.getElementById('updError');
+    const bodyData = {
+        username: document.getElementById('updUsername').value,
+        name: document.getElementById('updName').value,
+        surname: document.getElementById('updSurname').value,
+        email: document.getElementById('updEmail').value,
+        password: document.getElementById('updPassword').value
+    };
+    const repeat = document.getElementById('updRepeatPassword').value;
+    if (bodyData.password && bodyData.password !== repeat) { errorDiv.textContent = "Passwords do not match!"; return; }
+    errorDiv.textContent = "";
+    const response = await fetch('/auth/update', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(bodyData) });
+    await handleResponse(response, errorDiv);
+}
+
+async function performDelete() {
+    const errorDiv = document.getElementById('delError');
+    const bodyData = {
+        email: document.getElementById('delEmail').value,
+        password: document.getElementById('delPassword').value
+    };
+    const response = await fetch('/auth/delete', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(bodyData) });
+    await handleResponse(response, errorDiv);
+}
+
+async function performLogout() {
+    await fetch('/auth/logout', { method:'POST' });
+    window.location.href = '/';
+}
+</script>
+</body>
+</html>

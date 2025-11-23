@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Admin Panel</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f4f4f4;
+        margin: 0;
+        padding: 20px;
+    }
+    .container {
+        max-width: 500px;
+        margin: 30px auto;
+        padding: 20px;
+        background: white;
+        border-radius: 10px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    h2 {
+        text-align: center;
+        margin-bottom: 15px;
+        color: #333;
+    }
+    label {
+        display: block;
+        margin-top: 10px;
+        font-weight: bold;
+    }
+    input[type="text"], input[type="password"], input[type="email"], input[type="number"] {
+        width: 100%;
+        padding: 8px;
+        margin-top: 5px;
+        box-sizing: border-box;
+    }
+    button {
+        margin-top: 15px;
+        padding: 10px;
+        width: 100%;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        color: white;
+        font-size: 15px;
+    }
+    .create-btn { background-color: #007bff; }
+    .delete-btn { background-color: #dc3545; }
+
+    .home-link {
+        position: fixed;
+        top: 15px;
+        left: 20px;
+        font-size: 18px;
+        font-weight: bold;
+        color: #333;
+        text-decoration: none;
+    }
+    .home-link:hover { text-decoration: underline; }
+
+    .message {
+        margin-top: 10px;
+        font-size: 0.95em;
+        font-weight: bold;
+        color: green;
+    }
+    .error {
+        margin-top: 10px;
+        font-size: 0.95em;
+        font-weight: bold;
+        color: red;
+    }
+</style>
+</head>
+<body>
+
+<a href="/" class="home-link">← Home</a>
+
+<div class="container">
+    <h2>Create Account</h2>
+
+    <label>Username</label>
+    <input id="c_username" type="text">
+
+    <label>Name</label>
+    <input id="c_name" type="text">
+
+    <label>Surname</label>
+    <input id="c_surname" type="text">
+
+    <label>Email</label>
+    <input id="c_email" type="email">
+
+    <label>Password</label>
+    <input id="c_password" type="password">
+
+    <label>Access level</label>
+    <input id="c_access" type="number">
+
+    <button class="create-btn" onclick="adminCreate()">Create</button>
+    <div id="create_msg"></div>
+</div>
+
+
+<div class="container">
+    <h2>Delete Account</h2>
+
+    <label>Email</label>
+    <input id="d_email" type="email">
+
+    <label>Password</label>
+    <input id="d_password" type="password">
+
+    <button class="delete-btn" onclick="adminDelete()">Delete</button>
+    <div id="delete_msg"></div>
+</div>
+
+
+<script>
+async function adminCreate() {
+    const payload = {
+        account: {
+            username: document.getElementById("c_username").value,
+            name: document.getElementById("c_name").value,
+            surname: document.getElementById("c_surname").value,
+            email: document.getElementById("c_email").value,
+            password: document.getElementById("c_password").value
+        },
+        access_level: Number(document.getElementById("c_access").value)
+    };
+
+    const response = await fetch("/auth/admin_create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    });
+
+    const msgBox = document.getElementById("create_msg");
+    msgBox.innerHTML = response.status === 200 ? "✔ Account created" : "✘ Error creating account";
+    msgBox.className = response.status === 200 ? "message" : "error";
+}
+
+async function adminDelete() {
+    const payload = {
+        email: document.getElementById("d_email").value,
+        password: document.getElementById("d_password").value
+    };
+
+    const response = await fetch("/auth/admin_delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+    });
+
+    const msgBox = document.getElementById("delete_msg");
+    msgBox.innerHTML = response.status === 200 ? "✔ Account deleted" : "✘ Error deleting account";
+    msgBox.className = response.status === 200 ? "message" : "error";
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Welcome</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background-color: #f4f4f4;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+    }
+    .container {
+        text-align: center;
+        background: white;
+        padding: 50px;
+        border-radius: 15px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+    h1 {
+        margin-bottom: 30px;
+        color: #333;
+    }
+    a {
+        display: inline-block;
+        text-decoration: none;
+        background-color: #007bff;
+        color: white;
+        padding: 15px 30px;
+        border-radius: 8px;
+        font-size: 18px;
+        margin: 10px;
+        transition: background-color 0.2s ease;
+    }
+    a:hover { background-color: #0056b3; }
+</style>
+</head>
+<body>
+<div class="container">
+    <h1 id="greeting">Hello</h1>
+    <a href="/auth/">Go to Authentication</a>
+    <a href="/service/">Go to Service</a>
+</div>
+
+<script>
+async function fetchUserName() {
+    try {
+        const response = await fetch('/auth/get_name');
+        if (response.ok) {
+            const data = await response.json();
+            document.getElementById('greeting').textContent = `Hello, ${data.name}`;
+        } else {
+            document.getElementById('greeting').textContent = 'Hello!';
+        }
+    } catch (err) {
+        console.error(err);
+        document.getElementById('greeting').textContent = 'Hello, guest';
+    }
+}
+
+fetchUserName();
+</script>
+</body>
+</html>

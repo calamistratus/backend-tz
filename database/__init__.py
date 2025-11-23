@@ -1,16 +1,9 @@
-from database.orm_schemas import Accounts
-from database.database_getter import get_db_session, get_db_session_cm
-from database.repositories import AccountsRepository
+from database.orm_schemas import Accounts, VeryUnimportantData, UnimportantData, ImportantData
+from database.database_getter import get_db_session, get_db_session_cm, create_databases
+from database.repositories import (AccountsRepository,
+                                   VeryUnimportantDataRepository, UnimportantDataRepository, ImportantDataRepository,
+                                   create_mock_data)
 
-__all__ = ['Accounts', 'get_db_session', 'get_db_session_cm', 'AccountsRepository']
-
-"""
-CREATE TABLE accounts (
-	id BIGINT PRIMARY KEY,
-	name_enc VARCHAR,
-	email_enc VARCHAR UNIQUE NOT NULL,
-	username VARCHAR,
-	password_hash VARCHAR,
-	email_hash VARCHAR
-)
-"""
+__all__ = ['Accounts', 'VeryUnimportantData', 'UnimportantData', 'ImportantData',
+           'get_db_session', 'get_db_session_cm', 'create_databases', 'create_mock_data',
+           'AccountsRepository', 'VeryUnimportantDataRepository', 'UnimportantDataRepository', 'ImportantDataRepository']
