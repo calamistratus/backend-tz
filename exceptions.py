@@ -1,6 +1,4 @@
-from urllib.request import Request
-
-from starlette.responses import JSONResponse
+from fastapi.responses import JSONResponse
 
 
 class RedisPostgresException(Exception):
